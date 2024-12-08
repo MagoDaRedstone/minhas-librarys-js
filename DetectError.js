@@ -34,6 +34,7 @@
 
         console.log('Logs após salvar no localStorage:', logs); // Exibe os logs atuais
         renderLogsTable(logs); // Atualiza a visualização dos logs
+        openconsolefix();
     }
 
         // Função para renderizar logs no console
@@ -45,6 +46,8 @@
                         <th style="padding: 5px;">Tipo</th>
                         <th style="padding: 5px;">Mensagem</th>
                         <th style="padding: 5px;">Ações</th>
+                        <th style="padding: 5px;"><button style="background-color: #e74c3c; color: white; border: none; padding: 5px; cursor: pointer; position: absolute; right: 23px; top: 7px; left 1028px;" onclick="closeConsole()">❌ Fechar</button>
+                        </th>
                     </tr>
                 </thead>
                 <tbody>
@@ -226,12 +229,20 @@
         });
     };
 
-    // Adição do botão para togglar visibilidade do console
+    window.closeConsole = function() {
+        consoleContainer.style.display = 'none';
+        toggleButton.style.display = 'block'
+    }
+
+    function openconsolefix() {
+        toggleButton.style.display = 'none'
+    }
+
     const toggleButton = document.createElement('button');
-    toggleButton.textContent = '☑️ Console';
+    toggleButton.textContent = '☑️ open-Console';
     toggleButton.style.cssText = `
         position: fixed;
-        top: 666px;
+        top: 716px;
         left: 0px;
         background-color: #2ecc71;
         color: white;
@@ -243,12 +254,9 @@
 
     // Alterna visibilidade do console e ajusta o `top`
     toggleButton.addEventListener('click', () => {
-        if (consoleContainer.style.display === 'block') {
-            consoleContainer.style.display = 'none';
-            toggleButton.style.top = '716px';
-        } else {
+        if (consoleContainer.style.display === 'none') {
             consoleContainer.style.display = 'block';
-            toggleButton.style.top = '666px';
+            toggleButton.style.display = 'none';
         }
     });
 
