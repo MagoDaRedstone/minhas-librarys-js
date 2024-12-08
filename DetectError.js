@@ -23,13 +23,20 @@
 
     // Função para adicionar e renderizar logs
     function logError(error) {
-        const logs = JSON.parse(errorLogsString || '[]');
-        logs.push(error);
-        errorLogsString = JSON.stringify(logs);
-        renderLogsTable(logs);
+        let logs = JSON.parse(localStorage.getItem('errorLogs')) || [];
+
+        // Verifica se o erro já existe antes de adicionar novamente
+        if (!logs.some(log => log.message === error.message && log.stack === error.stack)) {
+            logs.push(error); // Adiciona o novo erro ao array de logs
+            localStorage.setItem('errorLogs', JSON.stringify(logs));
+            console.log('Erro salvo no localStorage!');
+        }
+
+        console.log('Logs após salvar no localStorage:', logs); // Exibe os logs atuais
+        renderLogsTable(logs); // Atualiza a visualização dos logs
     }
 
-    // Função para renderizar logs no console
+        // Função para renderizar logs no console
     function renderLogsTable(logs) {
         consoleContainer.innerHTML = `
             <table style="width: 100%; color: #f2f2f2; border-collapse: collapse; border-spacing: 0;">
@@ -42,6 +49,7 @@
                 </thead>
                 <tbody>
                     ${logs
+                        .filter(log => !log.resolved) // Filtra apenas os logs não resolvidos
                         .map(
                             (log, index) => `
                         <tr style="border-bottom: 1px solid #444;" data-index="${index}" data-stack="${log.stack || 'N/A'}">
@@ -154,12 +162,34 @@
         row.style.backgroundColor = '#2ecc71';
         setTimeout(() => row.remove(), 300);
 
+        // Atualizar os logs no localStorage sem removê-los completamente
+        const logs = JSON.parse(localStorage.getItem('errorLogs')) || [];
+        const errorIndex = parseInt(row.dataset.index, 10);
+        if (!isNaN(errorIndex) && errorIndex >= 0) {
+            const updatedLogs = logs.map((log, index) => {
+                if (index === errorIndex) {
+                    return { ...log, resolved: true }; // Marca como resolvido
+                }
+                return log;
+            });
+            localStorage.setItem('errorLogs', JSON.stringify(updatedLogs)); // Atualiza o localStorage
+            console.log('Erro marcado como resolvido no localStorage!');
+        }
+
+        // Exibir o conteúdo atual do localStorage para depuração
+        console.log('Logs atuais no localStorage:', JSON.parse(localStorage.getItem('errorLogs')));
+
+        // Fechar o detalhes do erro se estiver aberto
+        const detailsRow = row.nextElementSibling;
+        if (detailsRow && detailsRow.classList.contains('details-row')) {
+            detailsRow.remove();
+        }
+
         // Verificar se todos os erros foram resolvidos e ocultar o console se verdadeiro
         const allResolved = Array.from(consoleContainer.querySelectorAll('tr')).every(row => row.style.textDecoration === 'line-through');
         if (allResolved) {
             consoleContainer.style.display = 'none';
         }
-            window.toggleDetails(row);
     };
 
     window.toggleDetails = function (button) {
@@ -195,6 +225,34 @@
             console.error('Falha ao copiar o stack trace: ', err);
         });
     };
+
+    // Adição do botão para togglar visibilidade do console
+    const toggleButton = document.createElement('button');
+    toggleButton.textContent = '☑️ Console';
+    toggleButton.style.cssText = `
+        position: fixed;
+        top: 666px;
+        left: 0px;
+        background-color: #2ecc71;
+        color: white;
+        border: none;
+        padding: 5px;
+        cursor: pointer;
+        z-index: 10000;
+    `;
+
+    // Alterna visibilidade do console e ajusta o `top`
+    toggleButton.addEventListener('click', () => {
+        if (consoleContainer.style.display === 'block') {
+            consoleContainer.style.display = 'none';
+            toggleButton.style.top = '716px';
+        } else {
+            consoleContainer.style.display = 'block';
+            toggleButton.style.top = '666px';
+        }
+    });
+
+    document.body.appendChild(toggleButton);
 
     // Inicializar e carregar logs
     renderLogsTable([]);
